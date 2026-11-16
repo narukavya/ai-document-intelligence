@@ -10,14 +10,9 @@ sys.path.append(
 
 from app.backend.process_document import process_document
 from app.backend.summary_service import summarize_document
+from app.backend.entity_service import get_document_entities
+from app.backend.information_service import get_information
 from app.rag.qa_chain import ask_question
-from app.backend.entity_service import (
-    get_document_entities
-)
-
-from app.backend.information_service import (
-    get_information
-)
 
 st.set_page_config(
     page_title="AI Document Intelligence",
@@ -25,135 +20,219 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("📄 AI Document Intelligence System")
-
-st.markdown(
-    "Upload a PDF or DOCX document and ask questions using RAG + Gemini."
-)
-
+# -------------------------
 # Session State
+# -------------------------
+
 if "processed" not in st.session_state:
     st.session_state.processed = False
 
 if "current_file" not in st.session_state:
     st.session_state.current_file = None
 
-# Upload section
-uploaded_file = st.file_uploader(
-    "Upload PDF or DOCX",
-    type=["pdf", "docx"]
-)
+# -------------------------
+# Header
+# -------------------------
 
-st.info(
-    "Uploading a new document will replace the currently processed document."
-)
+st.title("📄 AI Document Intelligence System")
 
-if uploaded_file:
+st.markdown("""
+Analyze documents using:
 
-    # New file uploaded
-    if st.session_state.current_file != uploaded_file.name:
+- 📝 AI Summarization
+- 👤 Entity Extraction
+- 🧠 Information Extraction
+- 🔍 RAG Question Answering
+""")
 
-        st.session_state.current_file = uploaded_file.name
-        st.session_state.processed = False
+# -------------------------
+# Sidebar
+# -------------------------
 
-    # Process document only once
-    if not st.session_state.processed:
+with st.sidebar:
 
-        with open(uploaded_file.name, "wb") as f:
-            f.write(uploaded_file.getbuffer())
+    st.header("📂 Upload Document")
 
-        with st.spinner("Processing document..."):
-
-            chunks = process_document(
-                uploaded_file.name
-            )
-
-        st.session_state.processed = True
-
-        st.success(
-            f"✅ Document processed successfully! {chunks} chunks created."
-        )
-
-# Document Analysis Section
-if st.session_state.processed:
-
-    st.markdown("---")
-    st.subheader("📊 Document Analysis")
-
-    # Summary Button
-    if st.button("📝 Generate Summary"):
-
-        with st.spinner("Generating summary..."):
-
-            summary = summarize_document(
-                uploaded_file.name
-            )
-
-        st.subheader("📋 Document Summary")
-
-        st.markdown(summary)
-
-    st.markdown("---")
-
-    question = st.text_input(
-        "Ask a question about the document"
+    st.warning(
+        "Only one document can be processed at a time. Uploading a new document will replace the current document."
     )
 
-    if st.button("🔍 Get Answer"):
+    uploaded_file = st.file_uploader(
+        "Upload PDF or DOCX",
+        type=["pdf", "docx"]
+    )
 
-        if question.strip():
+    if uploaded_file:
 
-            with st.spinner(
-                "Generating answer..."
-            ):
+        st.success(uploaded_file.name)
 
-                answer = ask_question(
-                    question
-                )
-
-            st.subheader("Answer")
-
-            st.write(answer)
-
-        else:
-
-            st.warning(
-                "Please enter a question."
-            )
-
-    if st.button("🔍 Extract Entities"):
-
-        entities = get_document_entities(
-            uploaded_file.name
+        st.caption(
+            f"Size: {round(uploaded_file.size / 1024, 2)} KB"
         )
 
-        st.subheader("👤 People")
-        st.write(entities["PERSON"])
+        if st.session_state.current_file != uploaded_file.name:
 
-        st.subheader("📧 Emails")
-        st.write(entities["EMAIL"])
+            st.session_state.current_file = uploaded_file.name
+            st.session_state.processed = False
 
-        st.subheader("🏢 Organizations")
-        st.write(entities["ORG"])
+        if not st.session_state.processed:
 
-        st.subheader("📍 Locations")
-        st.write(entities["GPE"])
+            with open(uploaded_file.name, "wb") as f:
+                f.write(uploaded_file.getbuffer())
 
-        st.subheader("📅 Dates")
-        st.write(entities["DATE"])
+            with st.spinner(
+                "Processing document..."
+            ):
 
-    if st.button("🧠 Extract Key Information"):
+                chunks = process_document(
+                    uploaded_file.name
+                )
 
-        with st.spinner(
-            "Extracting information..."
+            st.session_state.processed = True
+
+            st.success(
+                f"{chunks} chunks created"
+            )
+
+# -------------------------
+# Main Content
+# -------------------------
+
+if st.session_state.processed:
+
+    tab1, tab2, tab3, tab4 = st.tabs(
+        [
+            "📝 Summary",
+            "👤 Entities",
+            "🧠 Information",
+            "🔍 Q&A"
+        ]
+    )
+
+    # ---------------------
+    # Summary
+    # ---------------------
+
+    with tab1:
+
+        if st.button(
+            "Generate Summary",
+            key="summary_btn"
         ):
 
-            info = get_information(
+            with st.spinner(
+                "Generating summary..."
+            ):
+
+                summary = summarize_document(
+                    uploaded_file.name
+                )
+
+            st.markdown(summary)
+
+    # ---------------------
+    # Entity Extraction
+    # ---------------------
+
+    with tab2:
+
+        if st.button(
+            "Extract Entities",
+            key="entity_btn"
+        ):
+
+            entities = get_document_entities(
                 uploaded_file.name
             )
 
-        st.subheader(
-            "📋 Key Information"
+            col1, col2 = st.columns(2)
+
+            with col1:
+
+                st.subheader("👤 People")
+
+                st.write(
+                    entities["PERSON"]
+                )
+
+                st.subheader("📧 Emails")
+
+                st.write(
+                    entities["EMAIL"]
+                )
+
+            with col2:
+
+                st.subheader("🏢 Organizations")
+
+                st.write(
+                    entities["ORG"]
+                )
+
+                st.subheader("📅 Dates")
+
+                st.write(
+                    entities["DATE"]
+                )
+
+    # ---------------------
+    # Information Extraction
+    # ---------------------
+
+    with tab3:
+
+        if st.button(
+            "Extract Information",
+            key="info_btn"
+        ):
+
+            with st.spinner(
+                "Extracting information..."
+            ):
+
+                info = get_information(
+                    uploaded_file.name
+                )
+
+            st.text_area(
+                "Key Information",
+                info,
+                height=350
+            )
+
+    # ---------------------
+    # Question Answering
+    # ---------------------
+
+    with tab4:
+
+        question = st.text_input(
+            "Ask a question about the document"
         )
 
-        st.markdown(info)
+        if st.button(
+            "Get Answer",
+            key="qa_btn"
+        ):
+
+            if question.strip():
+
+                with st.spinner(
+                    "Generating answer..."
+                ):
+
+                    answer = ask_question(
+                        question
+                    )
+
+                st.subheader(
+                    "Answer"
+                )
+
+                st.write(answer)
+
+            else:
+
+                st.warning(
+                    "Please enter a question."
+                )

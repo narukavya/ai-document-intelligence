@@ -1,23 +1,41 @@
 # AI Document Intelligence System
 
-AI-powered Document Analysis platform using
-LLMs, RAG, FastAPI, Streamlit, and ChromaDB.
-
 ## Features
 
-- PDF Processing
-- DOCX Processing
-- Text Extraction
+- PDF & DOCX Processing
 - AI Summarization
 - RAG Question Answering
-- Semantic Search
-- Insight Generation
+- Entity Extraction
+- Information Extraction
+- ChromaDB Vector Search
+- Gemini Integration
+- Streamlit UI
 
 ## Tech Stack
 
 - Python
 - Streamlit
-- FastAPI
 - ChromaDB
-- LangChain
-- Gemini/OpenAI
+- Sentence Transformers
+- Google Gemini
+- spaCy
+
+## Architecture
+
+Document
+↓
+Text Extraction
+↓
+Cleaning
+↓
+Chunking
+↓
+Embeddings
+↓
+ChromaDB
+↓
+Retriever
+↓
+Gemini
+↓
+Answer
