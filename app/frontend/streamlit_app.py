@@ -44,6 +44,10 @@ uploaded_file = st.file_uploader(
     type=["pdf", "docx"]
 )
 
+st.info(
+    "Uploading a new document will replace the currently processed document."
+)
+
 if uploaded_file:
 
     # New file uploaded
