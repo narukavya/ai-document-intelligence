@@ -11,6 +11,13 @@ sys.path.append(
 from app.backend.process_document import process_document
 from app.backend.summary_service import summarize_document
 from app.rag.qa_chain import ask_question
+from app.backend.entity_service import (
+    get_document_entities
+)
+
+from app.backend.information_service import (
+    get_information
+)
 
 st.set_page_config(
     page_title="AI Document Intelligence",
@@ -109,3 +116,40 @@ if st.session_state.processed:
             st.warning(
                 "Please enter a question."
             )
+
+    if st.button("🔍 Extract Entities"):
+
+        entities = get_document_entities(
+            uploaded_file.name
+        )
+
+        st.subheader("👤 People")
+        st.write(entities["PERSON"])
+
+        st.subheader("📧 Emails")
+        st.write(entities["EMAIL"])
+
+        st.subheader("🏢 Organizations")
+        st.write(entities["ORG"])
+
+        st.subheader("📍 Locations")
+        st.write(entities["GPE"])
+
+        st.subheader("📅 Dates")
+        st.write(entities["DATE"])
+
+    if st.button("🧠 Extract Key Information"):
+
+        with st.spinner(
+            "Extracting information..."
+        ):
+
+            info = get_information(
+                uploaded_file.name
+            )
+
+        st.subheader(
+            "📋 Key Information"
+        )
+
+        st.markdown(info)
