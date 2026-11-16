@@ -13,6 +13,12 @@ collection = client.get_or_create_collection(
 
 
 def store_chunks(chunks):
+
+    existing = collection.get()
+
+    if existing["ids"]:
+        collection.delete(ids=existing["ids"])
+
     embeddings = generate_embeddings(chunks)
 
     ids = [f"chunk_{i}" for i in range(len(chunks))]
