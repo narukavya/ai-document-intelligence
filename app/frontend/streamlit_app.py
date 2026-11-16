@@ -9,6 +9,7 @@ sys.path.append(
 )
 
 from app.backend.process_document import process_document
+from app.backend.summary_service import summarize_document
 from app.rag.qa_chain import ask_question
 
 st.set_page_config(
@@ -18,43 +19,76 @@ st.set_page_config(
 )
 
 st.title("📄 AI Document Intelligence System")
+
 st.markdown(
     "Upload a PDF or DOCX document and ask questions using RAG + Gemini."
 )
 
-# Initialize session state
+# Session State
 if "processed" not in st.session_state:
     st.session_state.processed = False
 
+if "current_file" not in st.session_state:
+    st.session_state.current_file = None
+
+# Upload section
 uploaded_file = st.file_uploader(
     "Upload PDF or DOCX",
     type=["pdf", "docx"]
 )
 
-if uploaded_file and not st.session_state.processed:
+if uploaded_file:
 
-    with open(uploaded_file.name, "wb") as f:
-        f.write(uploaded_file.getbuffer())
+    # New file uploaded
+    if st.session_state.current_file != uploaded_file.name:
 
-    with st.spinner("Processing document..."):
+        st.session_state.current_file = uploaded_file.name
+        st.session_state.processed = False
 
-        chunks = process_document(
-            uploaded_file.name
+    # Process document only once
+    if not st.session_state.processed:
+
+        with open(uploaded_file.name, "wb") as f:
+            f.write(uploaded_file.getbuffer())
+
+        with st.spinner("Processing document..."):
+
+            chunks = process_document(
+                uploaded_file.name
+            )
+
+        st.session_state.processed = True
+
+        st.success(
+            f"✅ Document processed successfully! {chunks} chunks created."
         )
 
-    st.session_state.processed = True
-
-    st.success(
-        f"✅ Document processed successfully! {chunks} chunks created."
-    )
-
+# Document Analysis Section
 if st.session_state.processed:
+
+    st.markdown("---")
+    st.subheader("📊 Document Analysis")
+
+    # Summary Button
+    if st.button("📝 Generate Summary"):
+
+        with st.spinner("Generating summary..."):
+
+            summary = summarize_document(
+                uploaded_file.name
+            )
+
+        st.subheader("📋 Document Summary")
+
+        st.markdown(summary)
+
+    st.markdown("---")
 
     question = st.text_input(
         "Ask a question about the document"
     )
 
-    if st.button("Get Answer"):
+    if st.button("🔍 Get Answer"):
 
         if question.strip():
 
@@ -71,6 +105,7 @@ if st.session_state.processed:
             st.write(answer)
 
         else:
+
             st.warning(
                 "Please enter a question."
             )
